@@ -59,5 +59,7 @@ public class ProductService {
         return productRepository.findByName(name);
     }
 
-
+    public List<Product> getProductsByCustomCriteria(String namePart, double minPrice) {
+        return productRepository.findProductsByCustomCriteria(namePart, minPrice);
+    }
 }

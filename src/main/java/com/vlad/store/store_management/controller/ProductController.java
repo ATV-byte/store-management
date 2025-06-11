@@ -83,4 +83,16 @@ public class ProductController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<Product>> searchProducts(
+            @RequestParam String namePart,
+            @RequestParam double minPrice) {
+
+        List<Product> products = productService.getProductsByCustomCriteria(namePart, minPrice);
+        if (products.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(products);
+    }
+
 }
