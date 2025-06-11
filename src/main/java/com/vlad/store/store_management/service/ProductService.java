@@ -1,12 +1,13 @@
 package com.vlad.store.store_management.service;
 
+import com.vlad.store.store_management.exception.ProductNotFoundException;
 import com.vlad.store.store_management.model.Product;
 import com.vlad.store.store_management.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.util.Optional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ProductService {
@@ -22,8 +23,9 @@ public class ProductService {
         return productRepository.findAll();
     }
 
-    public Optional<Product> getProductById(Long id) {
-        return productRepository.findById(id);
+    public Product getProductById(Long id) {
+        return productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
     }
 
     public Product addProduct(Product product) {
@@ -31,16 +33,31 @@ public class ProductService {
     }
 
     public Product updateProduct(Long id, Product updatedProduct) {
+        Product existingProduct = getProductById(id); // folosește metoda de mai sus, ca să arunce excepție dacă nu există
+        existingProduct.setName(updatedProduct.getName());
+        existingProduct.setPrice(updatedProduct.getPrice());
+        return productRepository.save(existingProduct);
+    }
+
+    public void deleteProduct(Long id) {
+        if (!productRepository.existsById(id)) {
+            throw new ProductNotFoundException("Product not found with id: " + id);
+        }
+        productRepository.deleteById(id);
+    }
+
+    public Product updateProductPrice(Long id, Double newPrice) {
         return productRepository.findById(id)
-                .map(existingProduct -> {
-                    existingProduct.setName(updatedProduct.getName());
-                    existingProduct.setPrice(updatedProduct.getPrice());
-                    return productRepository.save(existingProduct);
+                .map(product -> {
+                    product.setPrice(newPrice);
+                    return productRepository.save(product);
                 })
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
     }
 
-    public void deleteProduct(Long id) {
-        productRepository.deleteById(id);
+    public Optional<Product> getProductByName(String name) {
+        return productRepository.findByName(name);
     }
+
+
 }
