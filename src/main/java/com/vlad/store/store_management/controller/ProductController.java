@@ -2,12 +2,11 @@ package com.vlad.store.store_management.controller;
 
 import com.vlad.store.store_management.model.Product;
 import com.vlad.store.store_management.service.ProductService;
+import com.vlad.store.store_management.exception.ProductNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.vlad.store.store_management.exception.ProductNotFoundException;
 import java.util.List;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/products")
@@ -15,7 +14,6 @@ public class ProductController {
 
     private final ProductService productService;
 
-    // Constructor injection for service
     public ProductController(ProductService productService) {
         this.productService = productService;
     }
@@ -32,7 +30,7 @@ public class ProductController {
     public ResponseEntity<Product> getProductById(@PathVariable Long id) {
         Product product = productService.getProductById(id);
         if (product == null) {
-            return ResponseEntity.notFound().build();
+            throw new ProductNotFoundException("Product with id " + id + " not found.");
         }
         return ResponseEntity.ok(product);
     }
@@ -49,7 +47,7 @@ public class ProductController {
     public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product product) {
         Product updated = productService.updateProduct(id, product);
         if (updated == null) {
-            return ResponseEntity.notFound().build();
+            throw new ProductNotFoundException("Product with id " + id + " not found.");
         }
         return ResponseEntity.ok(updated);
     }
@@ -59,9 +57,9 @@ public class ProductController {
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         try {
             productService.deleteProduct(id);
-            return ResponseEntity.noContent().build(); // 204 No Content la ștergere cu succes
+            return ResponseEntity.noContent().build();
         } catch (ProductNotFoundException ex) {
-            return ResponseEntity.notFound().build(); // 404 Not Found dacă produsul nu există
+            throw new ProductNotFoundException("Product with id " + id + " not found.");
         }
     }
 
@@ -71,16 +69,15 @@ public class ProductController {
             Product updatedProduct = productService.updateProductPrice(id, price);
             return ResponseEntity.ok(updatedProduct);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            throw new ProductNotFoundException("Product with id " + id + " not found.");
         }
-
     }
 
     @GetMapping("/by-name/{name}")
     public ResponseEntity<Product> getProductByName(@PathVariable String name) {
         return productService.getProductByName(name)
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElseThrow(() -> new ProductNotFoundException("Product with name " + name + " not found."));
     }
 
     @GetMapping("/search")
@@ -95,4 +92,15 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
+    // Handle ProductNotFoundException locally
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<String> handleProductNotFoundException(ProductNotFoundException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    // Handle any other exceptions locally
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleGenericException(Exception ex) {
+        return new ResponseEntity<>("An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

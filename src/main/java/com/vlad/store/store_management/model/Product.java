@@ -4,6 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import org.springframework.data.annotation.Version;
 
 @Entity
 public class Product {
@@ -14,6 +15,9 @@ public class Product {
 
     private String name;
     private Double price;
+
+    @Version
+    private Integer version;
 
     // Constructors
     public Product() {
